@@ -17,8 +17,15 @@
     "url": "git+https://github.com/kadamwhite/ghostpress.git"
   },
   "dependencies": {
+    "bluebird": "^3.1.1",
+    "body-parser": "^1.14.2",
+    "cookie-parser": "^1.4.1",
     "express": "^4.13.3",
-    "lodash": "^4.0.0"
+    "express-hbs": "^0.8.4",
+    "js-yaml": "^3.5.2",
+    "lodash": "^4.0.0",
+    "parse-link-header": "^0.4.1",
+    "serve-favicon": "^2.3.0"
   },
   "devDependencies": {
     "grunt": "^0.4.5",

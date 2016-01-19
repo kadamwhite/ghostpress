@@ -1,6 +1,5 @@
 {
   "boss": true,
-  "camelcase": true,
   "curly": true,
   "eqeqeq": true,
   "eqnull": true,
@@ -8,7 +7,6 @@
   "immed": true,
   "noarg": true,
   "onevar": true,
-  "quotmark": "single",
   "strict": true,
   "trailing": true,
   "undef": true,
