@@ -75,12 +75,31 @@ router.get( '/', function homepageRoute( req, res, next ) {
   var postsPromise = wp.posts().embed();
   res.locals.context = [ 'index', 'home' ];
   bluebird.props({
-    title: pageTitle(),
+    meta_title: pageTitle(),
     posts: postsPromise,
     body_class: 'home-template'
   }).then(function( context ) {
     context.posts = context.posts.map( decease.post );
     res.render( 'index', context );
+  }).catch( next );
+});
+
+router.get( '/:slug', function homepageRoute( req, res, next ) {
+  var postsPromise = wp.posts().name( req.params.slug ).embed().then(function( posts ) {
+    // posts().name() returns an array, hopefully with only one element
+    return posts.length === 1 ? decease.post( posts[ 0 ] ) : 404;
+  });
+  var pageTitlePromise = postsPromise.then(function( post ) {
+    return pageTitle( post !== 404 ? post.title : '404' );
+  });
+  res.locals.context = [ 'post' ];
+  bluebird.props({
+    meta_title: pageTitlePromise,
+    post: postsPromise,
+    body_class: 'post-template'
+  }).then(function( context ) {
+    if ( context.post === 404 ) { return next(); }
+    res.render( 'post', context );
   }).catch( next );
 });
 

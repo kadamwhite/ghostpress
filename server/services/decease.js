@@ -8,6 +8,8 @@
  * - author
  */
 var _ = require( 'lodash' );
+var marked = require( 'marked' );
+var permalinks = require( './permalinks' );
 
 /**
  * links is a reusable key store of the relations used to segment embedded
@@ -37,20 +39,23 @@ var links = {
 */
 function deceaseAuthor( wpAuthor ) {
   return {
+    _type: 'author',
+    slug: wpAuthor.slug,
     id: wpAuthor.id,
     name: wpAuthor.name,
-    bio: wpAuthor.description,
+    bio: marked( wpAuthor.description ),
     location: null,
     website: wpAuthor.url,
     // TODO: the author's profile picture (image helper)
     image: wpAuthor.avatar_urls[ '48' ],
     // TODO: the author's cover image
     cover: null,
-    url: wpAuthor.link
+    url: permalinks.author( wpAuthor )
   };
 }
 
 function deceaseCategory( wpCategory ) {
+  wpCategory._type = 'tag';
   return wpCategory;
 }
 
@@ -91,13 +96,28 @@ function deceaseCategory( wpCategory ) {
 */
 // TODO: the cover image associated with the post (image helper)
 function deceaseMedia( wpMedia ) {
-  return wpMedia;
+  return {
+    _type: '_image',
+    slug: wpMedia.slug,
+    id: wpMedia.id,
+    alt: wpMedia.alt_text,
+    url: wpMedia.media_details.sizes.full.source_url,
+    width: wpMedia.media_details.sizes.full.width,
+    height: wpMedia.media_details.sizes.full.height
+  };
 }
 
 function deceasePost( wpPost ) {
+  if ( ! wpPost ) {
+    return {};
+  }
+
   var author = {};
   var categories = [];
-  var featuredMedia = {};
+  var featuredMedia = {
+    // Default to showing the main Bocoup header graphic
+    url: '/assets/banner-home.png'
+  };
   var postClasses = [ 'post' ];
   var embedded = wpPost._embedded;
 
@@ -134,15 +154,16 @@ function deceasePost( wpPost ) {
     postClasses.push( 'tag-' + category.slug );
   });
 
-  return {
+  var post = {
+    _type: 'post',
     _original: wpPost,
+    slug: wpPost.slug,
     post_class: postClasses.join( ' ' ),
     page: false,
     id: wpPost.id,
     title: wpPost.title.rendered,
     excerpt: wpPost.excerpt.rendered,
     content: wpPost.content.rendered,
-    url: '/' + wpPost.slug,
     image: featuredMedia,
     featured: wpPost.sticky,
     // TODO: meta_title - custom meta title for the post (meta_title helper)
@@ -156,6 +177,10 @@ function deceasePost( wpPost ) {
     // TODO: a list of tags associated with the post (see tags for details)
     tags: categories
   };
+
+  post.url = permalinks.post( post );
+
+  return post;
 }
 
 module.exports = {
