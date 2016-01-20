@@ -47,7 +47,7 @@ function deceaseAuthor( wpAuthor ) {
     location: null,
     website: wpAuthor.url,
     // TODO: the author's profile picture (image helper)
-    image: wpAuthor.avatar_urls[ '48' ],
+    image: wpAuthor.avatar_urls[ '96' ],
     // TODO: the author's cover image
     cover: null,
     url: permalinks.author( wpAuthor )
@@ -114,11 +114,9 @@ function deceasePost( wpPost ) {
 
   var author = {};
   var categories = [];
-  var featuredMedia = {
-    // Default to showing the main Bocoup header graphic
-    url: '/assets/banner-home.png'
-  };
+  var featuredMedia = {};
   var postClasses = [ 'post' ];
+  var content = wpPost.content.rendered;
   var embedded = wpPost._embedded;
 
   if ( embedded ) {
@@ -154,6 +152,27 @@ function deceasePost( wpPost ) {
     postClasses.push( 'tag-' + category.slug );
   });
 
+  // Try to deduce featured image from the first paragraph, if present: this is a nuance
+  // unique to Bocoup's theme's editorial direction. Note the lack of a closing <p> tag
+  // in this RE, that is so that it will work regardless of whether image is in a <p> all
+  // to itself or not.
+  var contentImageRE = /^<p[^>]*>[^<]*<img[^>]*src="([^"]+)"[^>]*>/i;
+
+  if ( content.trim().match( contentImageRE ) ) {
+    // second element in array returned from match() will be the () regex match
+    featuredMedia.url = content.trim().match( contentImageRE, '$1' )[ 1 ];
+
+    // Remove the image from the body so it does not display twice
+    content = content.replace( contentImageRE, '<p>' );
+  }
+  if ( ! featuredMedia.url ) {
+    // Default to showing the main Bocoup header graphic
+    featuredMedia.url = '/assets/banner-home.png';
+  }
+
+  // We may have caused there to be empty <p> tags: remove them for spacing consistency
+  content = content.replace( /<p><\/p>/g, '' );
+
   var post = {
     _type: 'post',
     _original: wpPost,
@@ -163,7 +182,7 @@ function deceasePost( wpPost ) {
     id: wpPost.id,
     title: wpPost.title.rendered,
     excerpt: wpPost.excerpt.rendered,
-    content: wpPost.content.rendered,
+    content: content,
     image: featuredMedia,
     featured: wpPost.sticky,
     // TODO: meta_title - custom meta title for the post (meta_title helper)

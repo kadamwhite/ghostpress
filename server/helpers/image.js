@@ -7,7 +7,10 @@
 function image( options ) {
   // Suppress JSHint errors on usage of "this" outside a prototype method:
   /* jshint validthis:true */
-  if ( this.image ) {
+  if ( this.image && typeof this.image === 'string' ) {
+    return this.image;
+  }
+  if ( this.image && this.image.url ) {
     return this.image.url;
   }
 }
