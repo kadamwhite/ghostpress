@@ -15,11 +15,15 @@ function page_url( context, block ) {
   var url = '';
 
   if ( this.tagSlug !== undefined ) {
-    url += permalinks.tag( this );
+    url += permalinks.tag({
+      slug: this.tagSlug
+    });
   }
 
   if ( this.authorSlug !== undefined ) {
-    url += permalinks.author( this );
+    url += permalinks.author({
+      slug: this.authorSlug
+    });
   }
 
   if ( context > 1 ) {
@@ -28,7 +32,8 @@ function page_url( context, block ) {
 
   url += '/';
 
-  return url;
+  // De-dupe any unintentionally-doubled slashes resulting for inelegant demo code
+  return url.replace( /\/+/g, '/' );
 }
 
 module.exports = page_url;

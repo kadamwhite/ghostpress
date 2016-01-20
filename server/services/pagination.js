@@ -9,6 +9,17 @@ function getPageNum( link ) {
 function getPaginationObj( wpResponse ) {
   var wpPagination = wpResponse._paging;
 
+  if ( ! wpPagination ) {
+    return {
+      page: 1,
+      prev: null,
+      next: null,
+      pages: 1,
+      total: wpResponse.length,
+      limit: 10
+    };
+  }
+
   var prev = getPageNum( wpPagination.links.prev );
   var next = getPageNum( wpPagination.links.next );
   var page = next ? next - 1 : prev ? prev + 1 : 1;

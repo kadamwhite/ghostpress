@@ -39,13 +39,15 @@ var links = {
 }]
 */
 function deceaseAuthor( wpAuthor ) {
+  if ( ! wpAuthor ) {
+    return {};
+  }
   return {
     _type: 'author',
     slug: wpAuthor.slug,
-    authorSlug: wpAuthor.slug,
     id: wpAuthor.id,
     name: wpAuthor.name,
-    bio: marked( wpAuthor.description ),
+    bio: marked( wpAuthor.description || '' ),
     location: null,
     website: wpAuthor.url,
     // TODO: the author's profile picture (image helper)
@@ -58,7 +60,6 @@ function deceaseAuthor( wpAuthor ) {
 
 function deceaseCategory( wpCategory ) {
   wpCategory._type = 'tag';
-  wpCategory.tagSlug = wpCategory.slug;
   return wpCategory;
 }
 

@@ -26,11 +26,11 @@ tag,    | /tag/:slug/page/2/    | tag-:slug.hbs,    | [{post}],     | .tag-templ
 paged   |                       | tag.hbs or        | {pagination}, | .tag-:slug,       |
         |                       | index.hbs         | {tag}         | .paged            |
 --------+-----------------------+-------------------+---------------+-------------------+-------
-author  | /author/:slug/        | author-:slug.hbs, | [{post}],     | .author-template, |
+author  | /author/:slug/        | author-:slug.hbs, | [{post}],     | .author-template, | Yes
         |                       | author.hbs or     | {pagination}, | .author-:slug     |
         |                       | index.hbs         | {author}      |                   |
 --------+-----------------------+-------------------+---------------+-------------------+-------
-author, | /author/:slug/page/2/ | author-:slug.hbs, | [{post}],     | .author-template, |
+author, | /author/:slug/page/2/ | author-:slug.hbs, | [{post}],     | .author-template, | Yes
 paged   |                       | author.hbs,       | {pagination}, | .author-:slug     |
         |                       | index.hbs         | {author}      | .paged            |
 --------+-----------------------+-------------------+---------------+-------------------+-------
@@ -49,6 +49,9 @@ var decease = require( './services/decease' );
 // Helpers
 var pageTitle = require( './services/page-title' );
 var getPaginationObj = require( './services/pagination' );
+function getAuthorFromPosts( posts ) {
+  return posts.length && posts[ 0 ]._embedded && posts[ 0 ]._embedded.author[ 0 ];
+}
 
 // Middleware
 router.use(function( req, res, next ) {
@@ -90,6 +93,8 @@ router.get( '/page/:pagenum', function pagedArchiveRoute( req, res, next ) {
   }).catch( next );
 });
 
+// Individual posts & pages
+
 router.get( '/:slug', function singlePageRoute( req, res, next ) {
   var postsPromise = wp.posts().name( req.params.slug ).embed().then(function( posts ) {
     // posts().name() returns an array, hopefully with only one element
@@ -125,6 +130,73 @@ router.get( '/:pageslug', function pageRoute( req, res, next ) {
   }).then(function( context ) {
     if ( context.post === 404 ) { return next(); }
     res.render( 'page', context );
+  }).catch( next );
+});
+
+// Author archives
+
+router.get( '/author/:authorslug', function homepageRoute( req, res, next ) {
+  var authorSlug = req.params.authorslug;
+  var postsPromise = wp.posts()
+    .author( authorSlug )
+    .perPage( 10 )
+    .embed();
+  var authorPromise = postsPromise
+    .then( getAuthorFromPosts )
+    .then( decease.author );
+  var pageTitlePromise = authorPromise
+    .then(function( author ) {
+      return pageTitle( 'Posts by ' + author.name );
+    });
+  var paginationPromise = postsPromise
+    .then( getPaginationObj )
+    .then(function( pagination ) {
+      pagination.authorSlug = authorSlug;
+      return pagination;
+    });
+
+  bluebird.props({
+    meta_title: pageTitlePromise,
+    posts: postsPromise,
+    pagination: paginationPromise,
+    context: [ 'author' ],
+    body_class: 'author-template'
+  }).then(function( context ) {
+    context.posts = context.posts.map( decease.post );
+    res.render( 'author', context );
+  }).catch( next );
+});
+
+router.get( '/author/:authorslug/page/:pagenum', function pagedArchiveRoute( req, res, next ) {
+  var authorSlug = req.params.authorslug;
+  var postsPromise = wp.posts()
+    .author( authorSlug )
+    .perPage( 10 )
+    .page( req.params.pagenum )
+    .embed();
+  var authorPromise = postsPromise
+    .then( getAuthorFromPosts )
+    .then( decease.author );
+  var pageTitlePromise = authorPromise
+    .then(function( author ) {
+      return pageTitle([ 'Posts by ' + author.name, 'Page ' + req.params.pagenum ]);
+    });
+  var paginationPromise = postsPromise
+    .then( getPaginationObj )
+    .then(function( pagination ) {
+      pagination.authorSlug = authorSlug;
+      return pagination;
+    });
+
+  bluebird.props({
+    meta_title: pageTitlePromise,
+    posts: postsPromise,
+    pagination: paginationPromise,
+    context: [ 'author', 'paged' ],
+    body_class: 'author-template paged'
+  }).then(function( context ) {
+    context.posts = context.posts.map( decease.post );
+    res.render( 'author', context );
   }).catch( next );
 });
 
