@@ -38,10 +38,10 @@ Object.keys( helpers ).forEach(function( helperName ) {
 app.use( favicon( path.join( __dirname, 'assets/ador_logo.png' ) ) );
 
 // Serve static assets from the theme
-app.use( express.static( path.join( themeDir, 'assets' ) ) );
+app.use( '/assets', express.static( path.join( themeDir, 'assets' ) ) );
 
-// Serve static assets from the server
-app.use( '/assets', express.static( path.join( __dirname, 'assets' ) ) );
+// Serve static images from the server as /images
+app.use( '/images', express.static( path.join( __dirname, 'assets' ) ) );
 
 // Understand JSON, cookies, and URL-encoded data (via the querystring library)
 app.use( bodyParser.json() );

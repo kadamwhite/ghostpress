@@ -52,8 +52,8 @@ function foundLink( linkUrl ) {
           siteInfo.description +
         '</span>'
       );
-      siteInfo.logo = '/assets/bocoup.png';
-      siteInfo.cover = '/assets/banner-home.png';
+      siteInfo.logo = '/images/bocoup.png';
+      siteInfo.cover = '/images/banner-home.png';
     }
   });
 }

@@ -152,11 +152,7 @@ function deceasePost( wpPost ) {
     content = content.replace( contentImageRE, '<p>' );
   }
   if ( ! featuredMedia.url ) {
-    // Default to showing the main graphic for the blog, if we set it in the wp service
-    featuredMedia.url = wp.info.cover;
-  }
-  if ( ! featuredMedia.url ) {
-    // If we STILL have no image, set this to Null so the theme will do the right thing.
+    // If we still have no image, set this to Null so the theme will do the right thing.
     featuredMedia = null;
   }
 

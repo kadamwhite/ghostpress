@@ -8,7 +8,7 @@ function asset( url, options ) {
   // root-relative, based on the express.static configuration)
   // and pass the results through Handlebars' SafeString
   return new hbs.handlebars.SafeString(
-    '/' + url.replace( /^\/+/, '' )
+    '/assets/' + url.replace( /^\/+(?:assets\/)?/, '' )
   );
 
   // This solution is _notably devoid_ of any of the highly-useful caching
