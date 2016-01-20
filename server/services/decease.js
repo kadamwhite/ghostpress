@@ -42,6 +42,7 @@ function deceaseAuthor( wpAuthor ) {
   return {
     _type: 'author',
     slug: wpAuthor.slug,
+    authorSlug: wpAuthor.slug,
     id: wpAuthor.id,
     name: wpAuthor.name,
     bio: marked( wpAuthor.description ),
@@ -57,6 +58,7 @@ function deceaseAuthor( wpAuthor ) {
 
 function deceaseCategory( wpCategory ) {
   wpCategory._type = 'tag';
+  wpCategory.tagSlug = wpCategory.slug;
   return wpCategory;
 }
 

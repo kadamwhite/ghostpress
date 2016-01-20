@@ -20,7 +20,8 @@ var themeDir = path.join( __dirname, 'themes', config.theme );
 app.engine( 'hbs', hbs.express4({
   defaultLayout: path.join( themeDir, 'default.hbs' ),
   partialsDir: [
-    path.join( themeDir, '/partials' )
+    path.join( themeDir, '/partials' ),
+    path.join( __dirname, 'server/helpers/tpl' )
   ]
 }) );
 app.set( 'view engine', 'hbs' );

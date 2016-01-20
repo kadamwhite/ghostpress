@@ -48,6 +48,7 @@ var decease = require( './services/decease' );
 
 // Helpers
 var pageTitle = require( './services/page-title' );
+var getPaginationObj = require( './services/pagination' );
 
 // Middleware
 router.use(function( req, res, next ) {
@@ -62,11 +63,12 @@ router.use(function( req, res, next ) {
 // Handle routes
 
 router.get( '/', function homepageRoute( req, res, next ) {
-  var postsPromise = wp.posts().embed();
+  var postsPromise = wp.posts().perPage( 10 ).embed();
   res.locals.context = [ 'index', 'home' ];
   bluebird.props({
     meta_title: pageTitle(),
     posts: postsPromise,
+    pagination: postsPromise.then( getPaginationObj ),
     body_class: 'home-template'
   }).then(function( context ) {
     context.posts = context.posts.map( decease.post );
