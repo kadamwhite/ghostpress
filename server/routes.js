@@ -76,6 +76,20 @@ router.get( '/', function homepageRoute( req, res, next ) {
   }).catch( next );
 });
 
+router.get( '/page/:pagenum', function pagedArchiveRoute( req, res, next ) {
+  var postsPromise = wp.posts().perPage( 10 ).page( req.params.pagenum ).embed();
+  res.locals.context = [ 'index', 'paged' ];
+  bluebird.props({
+    meta_title: pageTitle( 'Page ' + req.params.page ),
+    posts: postsPromise,
+    pagination: postsPromise.then( getPaginationObj ),
+    body_class: 'paged'
+  }).then(function( context ) {
+    context.posts = context.posts.map( decease.post );
+    res.render( 'index', context );
+  }).catch( next );
+});
+
 router.get( '/:slug', function homepageRoute( req, res, next ) {
   var postsPromise = wp.posts().name( req.params.slug ).embed().then(function( posts ) {
     // posts().name() returns an array, hopefully with only one element
