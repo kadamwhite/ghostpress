@@ -1,7 +1,10 @@
 'use strict';
 
 module.exports = {
-  'asset': require( './asset' ),
-  'excerpt': require( './excerpt' ),
-  'foreach': require( './foreach' )
+  asset:   require( './asset' ),
+  author:  require( './author' ),
+  date:    require( './date' ),
+  excerpt: require( './excerpt' ),
+  foreach: require( './foreach' ),
+  tags:    require( './tags' )
 };

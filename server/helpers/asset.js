@@ -2,7 +2,7 @@
 
 var hbs = require( 'express-hbs' );
 
-module.exports = function asset( url, options ) {
+function asset( url, options ) {
   // Ensure there is precisely one leading slash on the URL
   // (all URLs passed to asset helper are assumed to be
   // root-relative, based on the express.static configuration)
@@ -13,4 +13,6 @@ module.exports = function asset( url, options ) {
 
   // This solution is _notably devoid_ of any of the highly-useful caching
   // control code that exists within Ghost's own asset.js helper file!
-};
+}
+
+module.exports = asset;

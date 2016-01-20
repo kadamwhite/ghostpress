@@ -1,0 +1,9 @@
+{
+  "verbose": false,
+  "watch": [
+    "server",
+    "server.js",
+    "config.yml"
+  ],
+  "ext": "js,hbs,yml"
+}

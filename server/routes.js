@@ -41,23 +41,36 @@ private | /private/             | private.hbs       | {error}       | .private-t
 var express = require( 'express' );
 var router = express.Router();
 var bluebird = require( 'bluebird' );
+var hbs = require( 'express-hbs' );
 var wp = require( './services/wp' ).service;
+var siteInfo = require( './services/wp' ).info;
 var decease = require( './services/decease' );
 
 // Helpers
 var pageTitle = require( './services/page-title' );
 
+// Middleware
+router.use(function( req, res, next ) {
+  req.app.locals.blog = {
+    title: siteInfo.name,
+    description: siteInfo.description,
+    logo: '/assets/bocoup.png',
+    url: 'http://localhost:3456',
+    cover: '/assets/banner-home.png'
+  };
+  next();
+});
+
 // Handle routes
 
 router.get( '/', function homepageRoute( req, res, next ) {
   var postsPromise = wp.posts().embed();
-  console.log( postsPromise._renderURI() );
+  res.locals.context = [ 'index', 'home' ];
   bluebird.props({
     title: pageTitle(),
-    posts: postsPromise
+    posts: postsPromise,
+    body_class: 'home-template'
   }).then(function( context ) {
-    console.log( context.posts[ 0 ] );
-    console.log( '-----' );
     context.posts = context.posts.map( decease.post );
     res.render( 'index', context );
   }).catch( next );
@@ -74,7 +87,11 @@ router.use(function handle404( req, res, next ) {
   if ( req.accepts( 'html' ) ) {
     return res.render( 'index', {
       posts: [{
-        title: 'Not Found'
+        post_class: 'post',
+        published_at: new Date(),
+        title: 'Not Found',
+        excerpt: '',
+        content: ''
       }]
     });
   }
@@ -94,11 +111,14 @@ router.use(function( err, req, res, next ) {
   console.error( err );
   console.error( err.stack );
   res.status( err.status || 500 );
-  res.render( 'index', {
-    title: 'Error',
-    message: err.message,
-    error: err,
-    __dirname: __dirname
+  res.render( 'post', {
+    title: err,
+    content: new hbs.handlebars.SafeString(
+      err.stack
+    ),
+    published_at: new Date()
+    // error: err,
+    // __dirname: __dirname
   });
 });
 

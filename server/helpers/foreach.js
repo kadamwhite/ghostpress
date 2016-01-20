@@ -1,15 +1,13 @@
 'use strict';
 // # Foreach Helper
 // Usage: `{{#foreach data}}{{/foreach}}`
-//
-// Block helper designed for looping through posts
 
 var hbs = require( 'express-hbs' );
 var hbsUtils = hbs.handlebars.Utils;
 var _ = require( 'lodash' );
 
 /**
- * Block helper for iterating through posts
+ * Block helper designed for looping through posts
  *
  * Adapted from https://github.com/TryGhost/Ghost/blob/master/core/server/helpers/foreach.js
  */

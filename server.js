@@ -9,7 +9,7 @@ var hbs = require( 'express-hbs' );
 
 // Get the promise that will resolve when the WP instance is bound
 // (following successful API endpoint autodiscovery)
-var wpReady = require( './server/services/wp' ).ready;
+var wp = require( './server/services/wp' );
 
 var app = express();
 
@@ -38,6 +38,9 @@ app.use( favicon( path.join( __dirname, 'assets/ador_logo.png' ) ) );
 // Serve static assets from the theme
 app.use( express.static( path.join( themeDir, 'assets' ) ) );
 
+// Serve static assets from the server
+app.use( '/assets', express.static( path.join( __dirname, 'assets' ) ) );
+
 // Understand JSON, cookies, and URL-encoded data (via the querystring library)
 app.use( bodyParser.json() );
 app.use( bodyParser.urlencoded({ extended: false }) );
@@ -49,7 +52,7 @@ app.use( cookieParser() );
 app.use( '/', require( './server/routes' ) );
 
 // Load the server once the WP client has initialized
-wpReady.then(function() {
+wp.ready.then(function() {
   app.listen( 3456, function() {
     console.log( 'GhostPress is listening on port 3456!' );
   });
