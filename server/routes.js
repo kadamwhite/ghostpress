@@ -51,13 +51,21 @@ var pageTitle = require( './services/page-title' );
 
 // Middleware
 router.use(function( req, res, next ) {
-  req.app.locals.blog = {
-    title: siteInfo.name,
-    description: siteInfo.description,
-    logo: '/assets/bocoup.png',
-    url: 'http://localhost:3456',
-    cover: '/assets/banner-home.png'
-  };
+  hbs.updateTemplateOptions({
+    data: {
+      blog: {
+        title: siteInfo.name,
+        description: new hbs.handlebars.SafeString(
+          '<span style="background-color:#ea4142;padding:5px;">' +
+            siteInfo.description +
+          '</span>'
+        ),
+        logo: '/assets/bocoup.png',
+        url: 'http://localhost:3456',
+        cover: '/assets/banner-home.png'
+      }
+    }
+  });
   next();
 });
 

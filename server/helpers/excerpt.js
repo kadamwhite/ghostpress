@@ -13,7 +13,14 @@ var hbs = require( 'express-hbs' );
 function excerpt() {
   // Suppress JSHint errors on usage of "this" outside a prototype method:
   /* jshint validthis:true */
-  return new hbs.handlebars.SafeString( this.excerpt );
+  return new hbs.handlebars.SafeString(
+    this.excerpt
+      .trim()
+      .replace( /^<p[^>]*>/, '' )
+      .replace( /<\/p[^>]*>$/, '' )
+      .trim()
+      .replace( /\[\&hellip;\]$/, '' )
+  );
 }
 
 module.exports = excerpt;
