@@ -82,6 +82,5 @@
   "disallowSpaceAfterObjectKeys": true,
   "disallowSpaceAfterPrefixUnaryOperators": [ "++", "--", "+", "-", "~" ],
   "disallowSpaceBeforePostfixUnaryOperators": true,
-  "disallowSpaceBeforeBinaryOperators": [ ",", ":" ],
-  "disallowMultipleLineBreaks": true
+  "disallowSpaceBeforeBinaryOperators": [ ",", ":" ]
 }

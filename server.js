@@ -6,6 +6,7 @@ var favicon = require( 'serve-favicon' );
 var cookieParser = require( 'cookie-parser' );
 var bodyParser = require( 'body-parser' );
 var hbs = require( 'express-hbs' );
+var config = require( './server/services/config' );
 
 // Get the promise that will resolve when the WP instance is bound
 // (following successful API endpoint autodiscovery)
@@ -13,7 +14,7 @@ var wp = require( './server/services/wp' );
 
 var app = express();
 
-var themeDir = path.join( __dirname, 'theme' );
+var themeDir = path.join( __dirname, 'themes', config.theme );
 
 // view engine setup:
 app.engine( 'hbs', hbs.express4({

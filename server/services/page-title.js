@@ -21,7 +21,7 @@ function pageTitle( titleComponents ) {
     titleComponents = [ titleComponents ];
   }
 
-  titleComponents.push( wp.info.name );
+  titleComponents.push( wp.info.title );
 
   // Title-case & add | hierarchy delimiters
   return titleComponents.map(function( component ) {

@@ -10,6 +10,7 @@
 var _ = require( 'lodash' );
 var marked = require( 'marked' );
 var permalinks = require( './permalinks' );
+var wp = require( './wp' );
 
 /**
  * links is a reusable key store of the relations used to segment embedded
@@ -59,54 +60,38 @@ function deceaseCategory( wpCategory ) {
   return wpCategory;
 }
 
-/*
-"id": 1022,
-"date": "2013-03-15T15:40:38",
-"slug": "featured-image-horizontal-2",
-"type": "attachment",
-"link": "http://wpapi.loc/2012/03/template-featured-image-horizontal/featured-image-horizontal-2",
-"title": {
-  "rendered": "Horizontal Featured Image"
-},
-"author": 2,
-"alt_text": "Horizontal Featured Image",
-"media_type": "image",
-"media_details": {
-  // Dimensions of "full" version
-  "width": 580,
-  "height": 300,
-  "file": "2013/03/featured-image-horizontal-15.jpg",
-  "sizes": {
-    "thumbnail": {
-      "file": "featured-image-horizontal-15-150x150.jpg",
-      "width": 150,
-      "height": 150,
-      "mime_type": "image/jpeg",
-      "source_url": "http://wpapi.loc/content/uploads/2013/03/featured-image-horizontal-15-150x150.jpg"
-    },
-    "medium": {
-      "same": "keys"
-    },
-    "full": {
-      "same": "keys"
-    }
-  }
-},
-"source_url": "http://wpapi.loc/content/uploads/2013/03/featured-image-horizontal-15.jpg"
-*/
-// TODO: the cover image associated with the post (image helper)
+/**
+ * Convert a WP Media object into something the ghost theme can interpret
+ * (mostly it just needs to return an object with a URL)
+ *
+ * @param  {Object} wpMedia WP media object
+ * @return {Object}
+ */
 function deceaseMedia( wpMedia ) {
-  return {
+  var media = {
     _type: '_image',
     slug: wpMedia.slug,
     id: wpMedia.id,
     alt: wpMedia.alt_text,
-    url: wpMedia.media_details.sizes.full.source_url,
-    width: wpMedia.media_details.sizes.full.width,
-    height: wpMedia.media_details.sizes.full.height
+    width: wpMedia.media_details.width,
+    height: wpMedia.media_details.height
   };
+  if ( wpMedia.media_details.sizes && wpMedia.media_details.sizes.full ) {
+    media.url = wpMedia.media_details.sizes.full.source_url;
+  } else {
+    media.url = wpMedia.media_details.source_url;
+  }
+  return media;
 }
 
+
+/**
+ * Convert a WP Post object into something the ghost theme can interpret
+ * See http://themes.ghost.org/v0.7.5/docs/post-context#post-object-attributes
+ *
+ * @param  {Object} wpPost WP post object
+ * @return {Object}
+ */
 function deceasePost( wpPost ) {
   if ( ! wpPost ) {
     return {};
@@ -157,7 +142,6 @@ function deceasePost( wpPost ) {
   // in this RE, that is so that it will work regardless of whether image is in a <p> all
   // to itself or not.
   var contentImageRE = /^<p[^>]*>[^<]*<img[^>]*src="([^"]+)"[^>]*>/i;
-
   if ( content.trim().match( contentImageRE ) ) {
     // second element in array returned from match() will be the () regex match
     featuredMedia.url = content.trim().match( contentImageRE, '$1' )[ 1 ];
@@ -166,8 +150,12 @@ function deceasePost( wpPost ) {
     content = content.replace( contentImageRE, '<p>' );
   }
   if ( ! featuredMedia.url ) {
-    // Default to showing the main Bocoup header graphic
-    featuredMedia.url = '/assets/banner-home.png';
+    // Default to showing the main graphic for the blog, if we set it in the wp service
+    featuredMedia.url = wp.info.cover;
+  }
+  if ( ! featuredMedia.url ) {
+    // If we STILL have no image, set this to Null so the theme will do the right thing.
+    featuredMedia = null;
   }
 
   // We may have caused there to be empty <p> tags: remove them for spacing consistency

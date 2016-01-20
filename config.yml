@@ -1,2 +1,5 @@
 wp:
   url: http://website.loc
+  # url: https://feelingrestful.com
+# theme: ghostwriter
+theme: casper

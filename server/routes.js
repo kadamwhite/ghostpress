@@ -53,17 +53,7 @@ var pageTitle = require( './services/page-title' );
 router.use(function( req, res, next ) {
   hbs.updateTemplateOptions({
     data: {
-      blog: {
-        title: siteInfo.name,
-        description: new hbs.handlebars.SafeString(
-          '<span style="background-color:#ea4142;padding:5px;">' +
-            siteInfo.description +
-          '</span>'
-        ),
-        logo: '/assets/bocoup.png',
-        url: 'http://localhost:3456',
-        cover: '/assets/banner-home.png'
-      }
+      blog: siteInfo
     }
   });
   next();
