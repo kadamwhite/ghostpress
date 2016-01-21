@@ -22,7 +22,7 @@ tag     | /tag/:slug/           | tag-:slug.hbs,    | [{post}],     | .tag-templ
         |                       | tag.hbs,          | {pagination}, | .tag-:slug        |
         |                       | index.hbs         | {tag}         |                   |
 --------+-----------------------+-------------------+---------------+-------------------+-------
-tag,    | /tag/:slug/page/2/    | tag-:slug.hbs,    | [{post}],     | .tag-template,    |
+tag,    | /tag/:slug/page/2/    | tag-:slug.hbs,    | [{post}],     | .tag-template,    | Yes
 paged   |                       | tag.hbs or        | {pagination}, | .tag-:slug,       |
         |                       | index.hbs         | {tag}         | .paged            |
 --------+-----------------------+-------------------+---------------+-------------------+-------
@@ -83,7 +83,7 @@ router.get( '/', function homepageRoute( req, res, next ) {
 router.get( '/page/:pagenum', function pagedArchiveRoute( req, res, next ) {
   var postsPromise = wp.posts().perPage( 10 ).page( req.params.pagenum ).embed();
   bluebird.props({
-    meta_title: pageTitle( 'Page ' + req.params.page ),
+    meta_title: pageTitle( 'Page ' + req.params.pagenum ),
     posts: postsPromise,
     pagination: postsPromise.then( getPaginationObj ),
     context: [ 'index', 'paged' ],
@@ -136,7 +136,7 @@ router.get( '/:pageslug', function pageRoute( req, res, next ) {
 
 // Author archives
 
-router.get( '/author/:slug', function homepageRoute( req, res, next ) {
+router.get( '/author/:slug', function authorArchiveRoute( req, res, next ) {
   var authorSlug = req.params.slug;
   var postsPromise = wp.posts()
     .author( authorSlug )
@@ -169,7 +169,7 @@ router.get( '/author/:slug', function homepageRoute( req, res, next ) {
   }).catch( next );
 });
 
-router.get( '/author/:slug/page/:pagenum', function pagedArchiveRoute( req, res, next ) {
+router.get( '/author/:slug/page/:pagenum', function authorPagedArchiveRoute( req, res, next ) {
   var authorSlug = req.params.slug;
   var postsPromise = wp.posts()
     .author( authorSlug )
@@ -205,7 +205,7 @@ router.get( '/author/:slug/page/:pagenum', function pagedArchiveRoute( req, res,
 
 // Tag archives (Ghost "tag" == WP "category")
 
-router.get( '/tag/:slug', function homepageRoute( req, res, next ) {
+router.get( '/tag/:slug', function tagArchiveRoute( req, res, next ) {
   var tagSlug = req.params.slug;
   var tagPromise = wpService.get.category( tagSlug ).then( decease.tag );
   var postsPromise = tagPromise.then(function( category ) {
@@ -229,6 +229,40 @@ router.get( '/tag/:slug', function homepageRoute( req, res, next ) {
     pagination: paginationPromise,
     context: [ 'tag' ],
     body_class: 'tag-template'
+  }).then(function( context ) {
+    context.posts = context.posts.map( decease.post );
+    res.render( 'tag', context );
+  }).catch( next );
+});
+
+router.get( '/tag/:slug/page/:pagenum', function tagPagedArchiveRoute( req, res, next ) {
+  var tagSlug = req.params.slug;
+  var tagPromise = wpService.get.category( tagSlug ).then( decease.tag );
+  var postsPromise = tagPromise.then(function( category ) {
+    return wp.posts()
+      .category( category.id )
+      .perPage( 10 )
+      .page( req.params.pagenum )
+      .embed();
+  });
+  var pageTitlePromise = tagPromise
+    .then(function( tag ) {
+      return pageTitle([ 'Tag: ' + tag.name, 'Page ' + req.params.pagenum ]);
+    });
+  var paginationPromise = postsPromise
+    .then( getPaginationObj )
+    .then(function( pagination ) {
+      pagination.tagSlug = tagSlug;
+      return pagination;
+    });
+
+  bluebird.props({
+    meta_title: pageTitlePromise,
+    tag: tagPromise,
+    posts: postsPromise,
+    pagination: paginationPromise,
+    context: [ 'tag', 'paged' ],
+    body_class: 'tag-template paged'
   }).then(function( context ) {
     context.posts = context.posts.map( decease.post );
     res.render( 'tag', context );
