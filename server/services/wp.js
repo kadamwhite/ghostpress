@@ -143,7 +143,33 @@ var wpReady = new bluebird.Promise(function( resolve, reject ) {
   req.on( 'error', reject );
 });
 
+/**
+ * Define a helper method to wrap category requests, to abstract the song and
+ * dance needed to .search() for a specific category by slug
+ *
+ * @param {String} slug A category slug
+ * @return {Promise} A promise to a WP Category object from the API
+ */
+function getCategory( slug ) {
+  return wp.categories().search( slug ).then(function( categories ) {
+    if ( ! categories || ! categories.length ) {
+      throw new Error( 'No categories found with slug ' + slug );
+    }
+    for ( var i = 0; i < categories.length; i++ ) {
+      if ( categories[ i ].slug === slug ) {
+        return categories[ i ];
+      }
+    }
+    // Not found, but we did get a response: pass through the categories as-is
+    // so the requesting code can inspect the collection
+    return categories;
+  });
+}
+
 module.exports = {
+  get: {
+    category: getCategory
+  },
   info: siteInfo,
   ready: wpReady,
   service: wp

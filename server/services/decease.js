@@ -10,7 +10,6 @@
 var _ = require( 'lodash' );
 var marked = require( 'marked' );
 var permalinks = require( './permalinks' );
-var wp = require( './wp' );
 
 /**
  * links is a reusable key store of the relations used to segment embedded
