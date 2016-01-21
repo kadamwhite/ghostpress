@@ -12,6 +12,7 @@ module.exports = {
   image:      require( './image' ),
   page_url:   require( './page_url' ),
   pagination: require( './pagination' ),
+  plural:     require( './plural' ),
   tags:       require( './tags' ),
   url:        require( './url' )
 };
