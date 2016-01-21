@@ -28,6 +28,7 @@
     "marked": "^0.3.5",
     "parse-link-header": "^0.4.1",
     "request": "^2.67.0",
+    "rimraf": "^2.5.0",
     "serve-favicon": "^2.3.0"
   },
   "devDependencies": {
