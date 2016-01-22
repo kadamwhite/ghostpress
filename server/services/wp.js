@@ -41,8 +41,8 @@ function foundLink( linkUrl ) {
     siteInfo.title = apiRoot.name;
     siteInfo.description = apiRoot.description;
     // apiRoot.url exists, but is not relevant to this Ghost site: hard-code
-    // the localhost url.
-    siteInfo.url = 'http://localhost:3456';
+    // the root url as our "home" location, so we can be server-independent
+    siteInfo.url = '/';
 
     // Hard-code some Bocoup-content-compatibility properties.
     // The things you do for the sake of conference demo code...
