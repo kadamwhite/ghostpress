@@ -50,8 +50,17 @@ var decease = require( './services/decease' );
 // Helpers
 var pageTitle = require( './services/page-title' );
 var getPaginationObj = require( './services/pagination' );
-function getAuthorFromPosts( posts ) {
-  return posts.length && posts[ 0 ]._embedded && posts[ 0 ]._embedded.author[ 0 ];
+function getAuthorFromPosts( authorSlug ) {
+  return function( posts ) {
+    for ( var i = 0; i < posts.length; i++ ) {
+      if ( posts[ i ]._embedded && posts[ i ]._embedded.author[ 0 ] ) {
+        if ( posts[ i ]._embedded.author[ 0 ].slug === authorSlug ) {
+          return posts[ i ]._embedded.author[ 0 ];
+        }
+      }
+    }
+    return null;
+  }
 }
 
 // Middleware
@@ -143,7 +152,7 @@ router.get( '/author/:slug', function authorArchiveRoute( req, res, next ) {
     .perPage( 10 )
     .embed();
   var authorPromise = postsPromise
-    .then( getAuthorFromPosts )
+    .then( getAuthorFromPosts( authorSlug ) )
     .then( decease.author );
   var pageTitlePromise = authorPromise
     .then(function( author ) {
@@ -177,7 +186,7 @@ router.get( '/author/:slug/page/:pagenum', function authorPagedArchiveRoute( req
     .page( req.params.pagenum )
     .embed();
   var authorPromise = postsPromise
-    .then( getAuthorFromPosts )
+    .then( getAuthorFromPosts( authorSlug ) )
     .then( decease.author );
   var pageTitlePromise = authorPromise
     .then(function( author ) {
