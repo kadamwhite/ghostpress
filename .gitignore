@@ -35,3 +35,6 @@ node_modules
 
 # 3rd-party themes
 themes/
+
+# Generated code
+output/

@@ -3,10 +3,13 @@
 
 var path = require( 'path' );
 var _ = require( 'lodash' );
+var http = require( 'http' );
+
 var bluebird = require( 'bluebird' );
 var fs = bluebird.promisifyAll( require( 'fs' ) );
-var http = bluebird.promisifyAll( require( 'http' ) );
 var rimraf = bluebird.promisify( require( 'rimraf' ) );
+var mkdirp = bluebird.promisify( require( 'mkdirp' ) );
+var ncp = bluebird.promisify( require( 'ncp' ) );
 
 var wpService = require( '../server/services/wp' );
 var decease = require( '../server/services/decease' );
@@ -39,7 +42,11 @@ function getAllPages( wpReq ) {
   });
 }
 
+// Variable to hold our WP service instance
 var wp;
+
+// Variable to hold the directory into which this site will be generated
+var outputDir = path.resolve( __dirname, '../output' );
 
 // wpService.ready is a promise that resolves after API discovery completes
 wpService.ready
@@ -115,7 +122,7 @@ wpService.ready
 
     // Add all single posts
     data.posts.forEach(function( postSlug ) {
-      permalinks.push( permalinkService.post({ slug: postSlug }) );
+      permalinks.push( permalinkService.post({ slug: postSlug }) + '/' );
     });
 
     // Add all tag archives
@@ -144,44 +151,95 @@ wpService.ready
 
     return permalinks;
   })
-  // The goal of this step is to prefix every permalink with the root URL of
-  // the locally-running express server. This could have been done when pushing
-  // permalinks into the array, but it's conceptually easier to handle that
-  // as a separate step. (This isn't the slow part of the deployment process:
-  // that's coming later! We can afford to incur one more simple iteration
-  // at this comparatively-cheap stage.)
+  // Strip all initial slashes from permalinks, to make parsing them into
+  // relative directory and file system paths easier
   .then(function( permalinks ) {
     return permalinks.map(function( permalink ) {
-      // Append host server and ensure that any stray double-slashes are de-duped,
-      // out of an excess of caution more than any real concern.
-      return ( 'http://localhost:3456' + permalink ).replace( /\/+/, '/' );
+      return permalink.replace( /^\//, '' );
     });
   })
-  // Make a directory to hold all our generated pages
+  // Ensure our site's output directory is empty
   .then(function( permalinks ) {
-    var outputDir = path.resolve( __dirname, '../output' );
+    // rm -rf the directory,
     return rimraf( outputDir )
       .then(function() {
+        // Then recreate it
         return fs.mkdirAsync( outputDir );
       })
       .then(function() {
-        // Output directory has now been wiped & recreated, which was our goal:
-        // Carry onwards by passing the relevant info on to the next step
-        return {
-          permalinks: permalinks,
-          outputDir: outputDir
-        };
+        // Pass the permalinks forward
+        return permalinks;
       });
   })
-  .then(function( context ) {
-    var outputDir = context.outputDir;
-    var permalinks = context.permalinks;
-    // Systematically work through the permalinks to create all relevant directories
-    var neededDirectories = _.chain( permalinks )
-      .reduce(function( directories, permalink ) {
-        return directories;
-      }, [] )
-      .unique();
-    console.log( permalinks );
-    console.log( 'here' );
+  // We now make each directory that will be used to hold the generated site HTML
+  .then(function( permalinks ) {
+    // Use bluebird.reduce to execute each mkdirp action in sequence: we could
+    // parallelize this a bit for efficiency, but if we do too many at once node
+    // will begin to drop file system writes so sequential is safest.
+    return bluebird.reduce( permalinks, function( previousStep, permalink ) {
+      // Join permalink to the outputDir in which that permalink's directories
+      // will be created, then make the directory hierarchy
+      return mkdirp( path.join( outputDir, permalink ) );
+    }, bluebird.Promise.resolve() ).then(function() {
+      // All directories created! Pass the permalinks forward once more.
+      return permalinks;
+    });
+  })
+  // We have our permalink list, and we have our directory tree. Now we start
+  // to populate it with downloaded posts!
+  //
+  // For every permalink, request the URL from the express server and save out
+  // the HTML locally as [permalink]/index.html Using index.html gives us the
+  // lowest-overhead way to maintain the extension-less URL scheme of ghost
+  // while still generating static files.
+  //
+  // A more elegant solution would be to write the files out as e.g.
+  // `/permalink/example/` -> `/permalink/example.html` (instead of the
+  // `/permalink/example/index.html` used here) then use Nginx's `try_files`
+  // directive, e.g. `try_files $uri $uri.html $uri/` to suppress extensions.
+  .then(function( permalinks ) {
+    // Break permalinks into groups of 5: this is a reasonable number of concurrent
+    // HTTP read and File System write connections to have going at once.
+    var groups = _.chunk( permalinks, 5 );
+    return bluebird.reduce( groups, function( previous, group ) {
+      // return Promise.resolve();
+      // For each group, make a promise to wrap a (stream-based) file download
+      var downloadPromises = group.map(function( permalink ) {
+        return new bluebird.Promise(function( resolve, reject ) {
+          var outputFile = path.join( outputDir, permalink, 'index.html' );
+          var url = 'http://localhost:3456/' + permalink;
+          console.log( 'Saving ' + url + '...' );
+
+          // Use streaming interfaces here instead of promises for efficiency
+          var fileWriter = fs.createWriteStream( outputFile );
+          var request = http.get( url, function( response ) {
+            response.pipe( fileWriter );
+            fileWriter.on( 'finish', function() {
+              fileWriter.close( resolve );  // close() is async, resolve when done
+            });
+          });
+          request.on( 'error', function( err ) {
+            fs.unlink( dest ); // Also async but result doesn't matter to us
+            reject( err );
+          });
+        });
+      });
+      return bluebird.all( downloadPromises );
+    }, bluebird.Promise.resolve() ).then(function() { return permalinks });
+  })
+  // Copy theme assets directory into output folder
+  .then(function( permalinks ) {
+    var themeAssetsDir = path.join( process.cwd(), 'themes', config.theme, 'assets' );
+    var outputAssetsDir = path.join( outputDir, 'assets' );
+    return ncp( themeAssetsDir, outputAssetsDir ).then(function() { return permalinks });
+  })
+  // Copy hard-coded images directory into output folder
+  .then(function( permalinks ) {
+    var themeAssetsDir = path.join( process.cwd(), 'assets' );
+    var outputAssetsDir = path.join( outputDir, 'images' );
+    return ncp( themeAssetsDir, outputAssetsDir ).then(function() { return permalinks });
+  })
+  .then(function( permalinks ) {
+    console.log( '\nDone!' );
+    console.log( 'Saved ' +permalinks.length + ' pages to ' + outputDir );
   });
